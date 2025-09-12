@@ -1,9 +1,19 @@
-#include <string>
+#pragma once
 
-const int WIDTH = 64;
-const int HEIGHT = 32;
+#include <cstdint>
 
-const unsigned char FONT_SET[80] = {
+constexpr int DISPLAY_WIDTH = 64;
+constexpr int DISPLAY_HEIGHT = 32;
+
+const uint16_t MEM_SIZE = 0x1000;
+const uint8_t NUM_REGISTERS = 0x10;
+const uint8_t STACK_SIZE = 0x10;
+const uint8_t NUM_KEYS = 0x10;
+
+const uint16_t PC_START = 0x200;
+
+
+const uint8_t FONT_SET[] = {
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 	0x20, 0x60, 0x20, 0x20, 0xF0, // 1
 	0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -25,36 +35,26 @@ const unsigned char FONT_SET[80] = {
 class Chip8 {
 public:
 	/**
+	 * @brief Stack. Used to store return addresses.
+	 */
+	uint16_t stack[STACK_SIZE];
+
+	/**
+	 * @brief Pixels to be display on the screen
+	 */
+	uint8_t display[DISPLAY_WIDTH * DISPLAY_HEIGHT];
+
+	/**
 	 * @brief Main memory. First 512 bytes reserved for fonts. Programs begin at 0x200.
 	 */
-	unsigned char memory[4096];
+	uint8_t memory[MEM_SIZE];
 
 	/**
 	 * @brief 8-bit registers.
 	 *
 	 * Last byte reserved as a flag for certain instructions.
 	 */
-	unsigned char V[16];
-
-	/**
-	 * @brief Program Counter. Only uses 12 least significant bits.
-	 */
-	unsigned short int pc;
-
-	/**
-	 * @brief Address Register. Only uses 12 least significant bits.
-	 */
-	unsigned short int I;
-
-	/**
-	 * @brief Stack. Used to store return addresses.
-	 */
-	unsigned short int stack[16];
-
-	/**
-	 * @brief Stack Pointer.
-	 */
-	unsigned short int sp;
+	uint8_t V[NUM_REGISTERS];
 
 	/**
 	 * @brief Stores key inputs. Key Bindings:
@@ -69,22 +69,32 @@ public:
      * |Z|X|C|V|
      * +-+-+-+-+
 	 */
-	bool keys[16];
+	bool keys[NUM_KEYS];
+
+	/**
+	 * @brief Program Counter. Only uses 12 least significant bits.
+	 */
+	uint16_t pc;
+
+	/**
+	 * @brief Address Register. Only uses 12 least significant bits.
+	 */
+	uint16_t I;
+
+	/**
+	 * @brief Stack Pointer.
+	 */
+	uint16_t sp;
 
 	/**
 	 * @brief 8-bit register for sound timer. Automatically decrements if non-zero.
 	*/
-	unsigned char st;
+	uint8_t st;
 
 	/**
 	 * @brief 8-bit register for delay timer. Automatically decrements if non-zero.
 	 */
-	unsigned char dt;
-
-	/**
-	 * @brief Pixels to be display on the screen
-	 */
-	unsigned char display[WIDTH * HEIGHT];
+	uint8_t dt;
 
 	/**
 	 * @brief dictates whether to redraw or not
@@ -94,25 +104,13 @@ public:
     Chip8();
 
     /**
-     * @brief Sets register values to 0 and loads font set into main memory
-     * @return void
-     */
-	void reset();
-
-    /**
 	 * @brief Fetches and executes instructions based on opcode. Emulates chip-8 cpu cycle.
 	 */
-	void emulateCycle();
+	void executeInstruction();
 
     /**
-     * @brief Searches rom folder if game exists and loads into main memory.
+     * @brief Searches for ROM file and loads into main memory.
      * @returns true if success, false if failure
      */
-	bool loadGame(std::string name);
-
-    /**
-     * @brief Loads font set into main memory
-     * @return void
-     */
-	void loadFontSet();
+	bool loadGame(const char* name);
 };

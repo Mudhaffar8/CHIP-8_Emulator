@@ -4,75 +4,38 @@
 #include "chip.hpp"
 
 #include <iostream>
-#include <string>
 #include <cstring>
-#include <iomanip>
 #include <fstream>
-#include <stdexcept>
-#include <cstdlib>
-
 
 Chip8::Chip8() 
-{
-	srand(time(0));
-
-	sp = 0;
-	pc = 0x200;
-	st = 0;
-	dt = 0;
-	I = 0;
-	drawFlag = false;
-
-	memset(memory, 0, sizeof(memory));
-	memset(keys, false, sizeof(keys));
-	memset(stack, 0, sizeof(stack));
-	memset(display, 0, sizeof(display));
-	memset(V, 0, sizeof(V));
-
-	memcpy(memory, FONT_SET, sizeof(FONT_SET));
-}
-
-void Chip8::reset() 
-{	
-	sp = 0;
-	pc = 0x200;
-	st = 0;
-	dt = 0;
-	I = 0;
-	drawFlag = false;
-
-	memset(memory, 0, sizeof(memory));
-	memset(keys, false, sizeof(keys));
-	memset(stack, 0, sizeof(stack));
-	memset(display, 0, sizeof(display));
-	memset(V, 0, sizeof(V));
-}
-
-void Chip8::loadFontSet()
+ : stack{0}, display{0}, memory{0}, V{0}, keys{false},
+	pc(PC_START), I(0), sp(0),
+	st(0), dt(0),
+	drawFlag(false)
 {
 	memcpy(memory, FONT_SET, sizeof(FONT_SET));
 }
 
-bool Chip8::loadGame(std::string name)
+bool Chip8::loadGame(const char* path)
 {
-    std::ifstream file("./roms/" + name, std::ios::in | std::ios::binary);
-
-	unsigned char buffer[4096];
+    std::ifstream file(path, std::ios::in | std::ios::binary | std::ios::ate);
 
     if (!file.is_open()) 
     {
-        std::cerr << "File does not exist" << std::endl;
+        std::cerr << "ERROR: File Does Not Exist" << std::endl;
         return false;
     }
+
+	if (file.tellg() > MEM_SIZE - PC_START)
+	{
+		std::cerr << "ERROR: File Size Too Large" << std::endl;
+		return false;
+	}
+
+	uint8_t buffer[4096];
 
     file.seekg(0, std::ios::beg);
-    file.read(reinterpret_cast<char*>(buffer), sizeof(buffer) / sizeof(unsigned char));
-
-    if (file.gcount() > sizeof(memory) - pc) 
-    {
-        std::cerr << "File size is too large!" << std::endl;
-        return false;
-    }
+    file.read(reinterpret_cast<char*>(buffer), sizeof(buffer) / sizeof(uint8_t));
 
 
 	for (int i = 0; i < file.gcount(); i++)
@@ -83,19 +46,19 @@ bool Chip8::loadGame(std::string name)
     return true;
 }
 
-void Chip8::emulateCycle() 
+void Chip8::executeInstruction()
 {
 	// Fetch Opcode
-	unsigned short int opcode = memory[pc] << 8 | memory[pc + 1];
+	uint16_t opcode = memory[pc] << 8 | memory[pc + 1];
 
 	// Get X and Y register values for certain CPU instructions
 	// Such as 0x7XY0, 0x8XY0, and 0x9XY0
-	unsigned char Y = (opcode & 0x00F0) >> 4;
-	unsigned char X = (opcode & 0x0F00) >> 8;
+	uint8_t Y = (opcode & 0x00F0) >> 4;
+	uint8_t X = (opcode & 0x0F00) >> 8;
 	
 	// Used for CPU instructions containing addresses, 8-bit constants, and 4-bit constants
 	// Such as 0x1NNN, 0x2NNN, 0x6XNN
-	unsigned short int NNN = (opcode & 0x0FFF);
+	uint16_t NNN = (opcode & 0x0FFF);
 
 	pc += 2;
 
@@ -273,7 +236,7 @@ void Chip8::emulateCycle()
 						// Bit mask one bit at a time from MSB to LSB
 						if ((spriteRow & (0x80 >> w)) != 0)
 						{
-							int index = (w + V[X]) + ((h + V[Y]) * WIDTH);
+							int index = (w + V[X]) + ((h + V[Y]) * DISPLAY_WIDTH);
 
 							// Collision detected
 							if (display[index] == 1)
@@ -353,13 +316,13 @@ void Chip8::emulateCycle()
 					break;
 
 				default: 
-					// throw std::runtime_error("Uknown Opcode at instruction 0xF000");
+					std::cout << "Invalid Opcode at 0xF000: " << opcode << '\n';
 					break;
 			}
 			break;
 	
 		default:
-			// throw std::runtime_error("Uknown Opcode");
+			std::cout << "Invalid Opcode: " << opcode << '\n';
 			break;
 	}
 

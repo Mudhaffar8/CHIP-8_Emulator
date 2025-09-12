@@ -2,24 +2,21 @@
 
 #include "chip.hpp"
 
-#include <iostream>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL_keyboard.h>
 
 const int PIXEL_SIZE = 10;
 
-SDL_AppResult handleKeyPress(SDL_Scancode key);
 void draw();
+SDL_AppResult handleKeyPress(SDL_Scancode key);
 
 static SDL_Window* window = NULL;
 static SDL_Renderer* renderer = NULL;
 
-static Chip8* chip = NULL;
+static Chip8* chip = nullptr;
 
-int I = 0;
-
-SDL_Scancode keyBindings[16] = {
+const static SDL_Scancode keyBindings[16] = {
     SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4,
     SDL_SCANCODE_Q, SDL_SCANCODE_W, SDL_SCANCODE_E, SDL_SCANCODE_R,
     SDL_SCANCODE_A, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_F,
@@ -42,7 +39,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     }
 
     // Create Window
-    if (!SDL_CreateWindowAndRenderer("CHIP-8 Emulator", WIDTH * PIXEL_SIZE, HEIGHT * PIXEL_SIZE, 0, &window, &renderer)) 
+    if (!SDL_CreateWindowAndRenderer("CHIP-8 Emulator", DISPLAY_WIDTH * PIXEL_SIZE, DISPLAY_HEIGHT * PIXEL_SIZE, 0, &window, &renderer)) 
     {
         SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
         return SDL_APP_FAILURE;
@@ -58,7 +55,6 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
-    /* end the program, reporting success to the OS. */
     switch (event->type)
     {
         case SDL_EVENT_QUIT: 
@@ -75,11 +71,10 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 }
 
 
-
 /* This function runs once per frame, and is the heart of the program. */
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
-    chip->emulateCycle();
+    chip->executeInstruction();
 
     if (chip->drawFlag) 
     {
@@ -96,10 +91,11 @@ SDL_AppResult SDL_AppIterate(void* appstate)
         SDL_RenderPresent(renderer);
     }
 
-    SDL_Delay(4);
+    SDL_Delay(3);
 
     return SDL_APP_CONTINUE;  /* carry on with the program! */
 }
+
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
@@ -130,13 +126,14 @@ SDL_AppResult handleKeyPress(SDL_Scancode key)
     return SDL_APP_CONTINUE;
 }
 
+
 void draw()
 {
-    for (int i = 0; i < HEIGHT; i++)
+    for (int i = 0; i < DISPLAY_HEIGHT; i++)
     {
-        for (int j = 0; j < WIDTH; j++)
+        for (int j = 0; j < DISPLAY_WIDTH; j++)
         {
-            if (chip->display[j + (i * WIDTH)]) 
+            if (chip->display[j + (i * DISPLAY_WIDTH)]) 
             {
                 SDL_FRect rect = {
                     (float)(j * PIXEL_SIZE),
