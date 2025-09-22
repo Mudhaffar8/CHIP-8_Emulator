@@ -12,6 +12,8 @@ const uint8_t NUM_KEYS = 0x10;
 
 const uint16_t PC_START = 0x200;
 
+const uint16_t PROGRAM_SIZE = MEM_SIZE - PC_START;
+
 
 const uint8_t FONT_SET[] = {
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -32,7 +34,8 @@ const uint8_t FONT_SET[] = {
 	0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 };
 
-class Chip8 {
+class Chip8 
+{
 public:
 	/**
 	 * @brief Stack. Used to store return addresses.
@@ -104,13 +107,13 @@ public:
     Chip8();
 
     /**
-	 * @brief Fetches and executes instructions based on opcode. Emulates chip-8 cpu cycle.
-	 */
-	void executeInstruction();
-
-    /**
      * @brief Searches for ROM file and loads into main memory.
      * @returns true if success, false if failure
      */
 	bool loadGame(const char* name);
+
+    /**
+	 * @brief Fetches and executes instructions based on opcode. Emulates chip-8 cpu cycle.
+	 */
+	void executeInstruction();
 };

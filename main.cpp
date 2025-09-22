@@ -16,6 +16,9 @@ static SDL_Renderer* renderer = NULL;
 
 static Chip8* chip = nullptr;
 
+static const SDL_Color bgColour{0, 0, 0, SDL_ALPHA_OPAQUE};
+static const SDL_Color drawColour{255, 255, 255, SDL_ALPHA_OPAQUE};
+
 const static SDL_Scancode keyBindings[16] = {
     SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4,
     SDL_SCANCODE_Q, SDL_SCANCODE_W, SDL_SCANCODE_E, SDL_SCANCODE_R,
@@ -53,6 +56,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     return SDL_APP_CONTINUE;  /* carry on with the program! */
 }
 
+
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
     switch (event->type)
@@ -78,12 +82,12 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
     if (chip->drawFlag) 
     {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer, bgColour.r, bgColour.g, bgColour.b, bgColour.a);
 
         /* clear the window to the draw color. */
         SDL_RenderClear(renderer);
 
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer, drawColour.r, drawColour.g, drawColour.b, drawColour.a);
         
         draw();
         
@@ -108,8 +112,6 @@ SDL_AppResult handleKeyPress(SDL_Scancode key)
 {
     if (key == SDL_SCANCODE_ESCAPE) 
         return SDL_APP_SUCCESS;
-
-    // const bool* keyboardState = SDL_GetKeyboardState(NULL);
 
     for (int i = 0; i < 16; i++)
     {

@@ -7,10 +7,17 @@
 #include <cstring>
 #include <fstream>
 
-Chip8::Chip8() 
- : stack{0}, display{0}, memory{0}, V{0}, keys{false},
-	pc(PC_START), I(0), sp(0),
-	st(0), dt(0),
+Chip8::Chip8() : 
+	stack{0}, 
+	display{0}, 
+	memory{0}, 
+	V{0}, 
+	keys{false},
+	pc(PC_START), 
+	I(0), 
+	sp(0),
+	st(0), 
+	dt(0),
 	drawFlag(false)
 {
 	memcpy(memory, FONT_SET, sizeof(FONT_SET));
@@ -26,17 +33,17 @@ bool Chip8::loadGame(const char* path)
         return false;
     }
 
-	if (file.tellg() > MEM_SIZE - PC_START)
+	if (file.tellg() > PROGRAM_SIZE)
 	{
+		file.close();
 		std::cerr << "ERROR: File Size Too Large" << std::endl;
 		return false;
 	}
 
-	uint8_t buffer[4096];
+	uint8_t buffer[PROGRAM_SIZE];
 
     file.seekg(0, std::ios::beg);
     file.read(reinterpret_cast<char*>(buffer), sizeof(buffer) / sizeof(uint8_t));
-
 
 	for (int i = 0; i < file.gcount(); i++)
 		memory[pc + i] = buffer[i];
@@ -48,7 +55,6 @@ bool Chip8::loadGame(const char* path)
 
 void Chip8::executeInstruction()
 {
-	// Fetch Opcode
 	uint16_t opcode = memory[pc] << 8 | memory[pc + 1];
 
 	// Get X and Y register values for certain CPU instructions
@@ -59,6 +65,8 @@ void Chip8::executeInstruction()
 	// Used for CPU instructions containing addresses, 8-bit constants, and 4-bit constants
 	// Such as 0x1NNN, 0x2NNN, 0x6XNN
 	uint16_t NNN = (opcode & 0x0FFF);
+	uint8_t NN = (opcode & 0x00FF);
+	uint8_t N = (opcode & 0x000F);
 
 	pc += 2;
 
@@ -69,11 +77,11 @@ void Chip8::executeInstruction()
 	{
 		case 0x0000:
 			// Clear Screen
-			if ((opcode & 0x00FF) == 0xE0) 
+			if (NNN == 0xE0) 
 			{
 				memset(display, 0, sizeof(display));
 			} 
-			else if ((opcode & 0x00FF) == 0xEE)
+			else if (NNN == 0xEE)
 			{ 
 				// Return from subroutine
 				stack[sp] = 0;
@@ -97,12 +105,12 @@ void Chip8::executeInstruction()
 
 		// (0x3XNN) Skip next instruction if Vx == NN
 		case 0x3000:
-			if (V[X] == (NNN & 0x00FF)) pc += 2;
+			if (V[X] == NN) pc += 2;
 			break;
 
 		// (0x4XNN) Skip instruction if Vx != NN
 		case 0x4000:
-			if (V[X] != (NNN & 0x00FF)) pc += 2;
+			if (V[X] != NN) pc += 2;
 			break;
 
 		// (0x5XY0) Skip instruction if Vx == Vy
@@ -112,17 +120,17 @@ void Chip8::executeInstruction()
 
 		// (0x6XNN) Sets VX register to NN
 		case 0x6000:
-			V[X] = NNN & 0x00FF;
+			V[X] = NN;
 			break;
 
 		// (0x7XNN) Adds NN to register VX
 		case 0x7000:
-			V[X] += NNN & 0x00FF;
+			V[X] += NN;
 			break;
 
 		// (0x8XY0) Handle bit and math operations on VX, VY registers
 		case 0x8000:
-			switch (opcode & 0x000F) 
+			switch (N) 
 			{
 				case 0x0:
 					V[X] = V[Y];
@@ -213,7 +221,7 @@ void Chip8::executeInstruction()
 
 		// (0xCXNN) Set VX to the result of bitwise AND operation on random number and NN
 		case 0xC000:
-			V[X] = (rand() % 256) & (NNN & 0x00FF);
+			V[X] = (rand() % 256) & NN;
 			break;
 
 		// (0xDXYN) Draws a sprite at coordinates (Vx, Vy) w/ a width of 8 pixels
@@ -222,7 +230,7 @@ void Chip8::executeInstruction()
 			{
 				unsigned char spriteRow;
 
-				int height = NNN & 0x000F;
+				int height = N;
 
 				// Reset collision flag
 				V[0xF] = 0;
@@ -252,11 +260,11 @@ void Chip8::executeInstruction()
 
 		// (0xEXNN) Skips next instruction if key is/isn't pressed
 		case 0xE000:
-			if ((opcode & 0x00FF) == 0x9E) 
+			if (NNN == 0x9E) 
 			{
 				if (keys[V[X]]) pc += 2;
 			} 
-			else if ((opcode & 0x00FF) == 0xA1) 
+			else if (NNN == 0xA1) 
 			{
 				if (!keys[V[X]]) pc += 2;
 			}
@@ -264,7 +272,7 @@ void Chip8::executeInstruction()
 
 		// (0xFXNN)
 		case 0xF000:
-			switch (opcode & 0x00FF) 
+			switch (NN) 
 			{
 				case 0x07:
 					V[X] = dt;
