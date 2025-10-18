@@ -7,11 +7,6 @@ This is a simple CHIP-8 emulator built in C++ alongside the SDL3 library for gra
 <img alt="CHIP-8_space_invaders" src="https://github.com/user-attachments/assets/f7f0f242-8a19-4930-807e-34464da97405" /> <img alt="CHIP-8_tetrsit" src="https://github.com/user-attachments/assets/e4b54521-1f69-4999-b977-fbd935e45f78" />
 <img alt="CHIP-8_breakout" src="https://github.com/user-attachments/assets/cbd762bf-5d4a-4818-a295-f977ee77285a" />
 
-
-# How to Run
-This project is included with an executable file. To run, cd into the project folder and write this into the command line
-./main path_to_rom
-
 # Requirements
 - C++ (C++11 or later)
 - SDL3 (for graphics, and input)

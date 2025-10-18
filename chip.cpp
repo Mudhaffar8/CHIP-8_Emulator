@@ -62,7 +62,7 @@ void Chip8::executeInstruction()
 	uint8_t Y = (opcode & 0x00F0) >> 4;
 	uint8_t X = (opcode & 0x0F00) >> 8;
 	
-	// Used for CPU instructions containing addresses, 8-bit constants, and 4-bit constants
+	// Used for CPU instructions containing addresses, 8-bit and 4-bit constants
 	// Such as 0x1NNN, 0x2NNN, 0x6XNN
 	uint16_t NNN = (opcode & 0x0FFF);
 	uint8_t NN = (opcode & 0x00FF);
@@ -77,11 +77,11 @@ void Chip8::executeInstruction()
 	{
 		case 0x0000:
 			// Clear Screen
-			if (NNN == 0xE0) 
+			if (NNN == 0x0E0) 
 			{
 				memset(display, 0, sizeof(display));
 			} 
-			else if (NNN == 0xEE)
+			else if (NNN == 0x0EE)
 			{ 
 				// Return from subroutine
 				stack[sp] = 0;
@@ -228,18 +228,18 @@ void Chip8::executeInstruction()
 		// and a height of N pixels
 		case 0xD000:
 			{
-				unsigned char spriteRow;
+				uint8_t spriteRow;
 
 				int height = N;
 
 				// Reset collision flag
 				V[0xF] = 0;
 
-				for (int h = 0; h < height; h++)
+				for (int h = 0; h < height; ++h)
 				{
 					spriteRow = memory[I + h];
 
-					for (int w = 0; w < 8; w++)
+					for (int w = 0; w < 8; ++w)
 					{
 						// Bit mask one bit at a time from MSB to LSB
 						if ((spriteRow & (0x80 >> w)) != 0)
@@ -260,11 +260,11 @@ void Chip8::executeInstruction()
 
 		// (0xEXNN) Skips next instruction if key is/isn't pressed
 		case 0xE000:
-			if (NNN == 0x9E) 
+			if (NN == 0x9E) 
 			{
 				if (keys[V[X]]) pc += 2;
 			} 
-			else if (NNN == 0xA1) 
+			else if (NN == 0xA1) 
 			{
 				if (!keys[V[X]]) pc += 2;
 			}
