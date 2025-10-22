@@ -1,151 +1,41 @@
-#define SDL_MAIN_USE_CALLBACKS 1
+#include <iostream>
+#include <chrono>
 
 #include "chip.hpp"
+#include "display.hpp"
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
-#include <SDL3/SDL_keyboard.h>
-
-const int PIXEL_SIZE = 10;
-
-void draw();
-SDL_AppResult handleKeyPress(SDL_Scancode key);
-
-static SDL_Window* window = NULL;
-static SDL_Renderer* renderer = NULL;
-
-static Chip8* chip = nullptr;
-
-static const SDL_Color bgColour{0, 0, 0, SDL_ALPHA_OPAQUE};
-static const SDL_Color drawColour{255, 255, 255, SDL_ALPHA_OPAQUE};
-
-const static SDL_Scancode keyBindings[16] = {
-    SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4,
-    SDL_SCANCODE_Q, SDL_SCANCODE_W, SDL_SCANCODE_E, SDL_SCANCODE_R,
-    SDL_SCANCODE_A, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_F,
-    SDL_SCANCODE_Z, SDL_SCANCODE_X, SDL_SCANCODE_C, SDL_SCANCODE_V
-};
-
-SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
+int main(int argc, char** argv)
 {
-    if (argc != 2) 
+    if (argc != 2)
     {
-        SDL_Log("Invalid # of arguments");
-        return SDL_APP_FAILURE;
+        std::cerr << "Invalid # of Arguments (Expected 2)" << std::endl;
+        exit(1);
     }
 
-    // Initialize SDL
-    if (!SDL_Init(SDL_INIT_VIDEO)) 
+    Chip8 chip;
+
+    if (!chip.loadGame(argv[1]))
+        exit(1);
+
+    Display display;
+
+    const double frame_duration = 16.777; // In milliseconds
+    while (display.is_program_running())
     {
-        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
-        return SDL_APP_FAILURE;
+        auto start = std::chrono::steady_clock::now();
+
+        display.handle_input(chip.keys);
+
+        chip.executeInstruction();
+
+        if (chip.drawFlag)
+            display.update_screen(chip.display);
+ 
+        auto end = std::chrono::steady_clock::now();
+        auto diff = end - start;
+
+        SDL_Delay(3); // TODO: Have delay change based on loop execution time for consistent FPS 
     }
 
-    // Create Window
-    if (!SDL_CreateWindowAndRenderer("CHIP-8 Emulator", DISPLAY_WIDTH * PIXEL_SIZE, DISPLAY_HEIGHT * PIXEL_SIZE, 0, &window, &renderer)) 
-    {
-        SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
-        return SDL_APP_FAILURE;
-    }
-
-    chip = new Chip8();
-
-    if (!chip->loadGame(argv[1]))
-        return SDL_APP_FAILURE;
-
-    return SDL_APP_CONTINUE;  /* carry on with the program! */
-}
-
-
-SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
-{
-    switch (event->type)
-    {
-        case SDL_EVENT_QUIT: 
-            return SDL_APP_SUCCESS;  
-
-        case SDL_EVENT_KEY_DOWN:
-            return handleKeyPress(event->key.scancode);
-
-        default: 
-            break;
-    } 
-    
-    return SDL_APP_CONTINUE;  
-}
-
-
-/* This function runs once per frame, and is the heart of the program. */
-SDL_AppResult SDL_AppIterate(void* appstate)
-{
-    chip->executeInstruction();
-
-    if (chip->drawFlag) 
-    {
-        SDL_SetRenderDrawColor(renderer, bgColour.r, bgColour.g, bgColour.b, bgColour.a);
-
-        /* clear the window to the draw color. */
-        SDL_RenderClear(renderer);
-
-        SDL_SetRenderDrawColor(renderer, drawColour.r, drawColour.g, drawColour.b, drawColour.a);
-        
-        draw();
-        
-        /* put the newly-cleared rendering on the screen. */
-        SDL_RenderPresent(renderer);
-    }
-
-    SDL_Delay(3);
-
-    return SDL_APP_CONTINUE;  /* carry on with the program! */
-}
-
-
-void SDL_AppQuit(void* appstate, SDL_AppResult result)
-{
-    /* SDL will clean up the window/renderer for us. */
-    delete chip;
-}
-
-
-SDL_AppResult handleKeyPress(SDL_Scancode key)
-{
-    if (key == SDL_SCANCODE_ESCAPE) 
-        return SDL_APP_SUCCESS;
-
-    for (int i = 0; i < 16; i++)
-    {
-        if (key == keyBindings[i])
-        {
-            chip->keys[i] = true; 
-        } 
-        else 
-        {
-            chip->keys[i] = false;
-        }
-    }
-
-    return SDL_APP_CONTINUE;
-}
-
-
-void draw()
-{
-    for (int i = 0; i < DISPLAY_HEIGHT; i++)
-    {
-        for (int j = 0; j < DISPLAY_WIDTH; j++)
-        {
-            if (chip->display[j + (i * DISPLAY_WIDTH)]) 
-            {
-                SDL_FRect rect = {
-                    (float)(j * PIXEL_SIZE),
-                    (float)(i * PIXEL_SIZE),
-                    (float)PIXEL_SIZE,
-                    (float)PIXEL_SIZE
-                };
-
-                SDL_RenderFillRect(renderer, &rect);
-            }
-        }
-    }
+    return 0;
 }

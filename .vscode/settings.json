@@ -52,6 +52,13 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xutility": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "array": "cpp",
+        "sstream": "cpp",
+        "strstream": "cpp",
+        "chrono": "cpp",
+        "forward_list": "cpp",
+        "optional": "cpp",
+        "ratio": "cpp"
     }
 }

@@ -7,18 +7,7 @@
 #include <cstring>
 #include <fstream>
 
-Chip8::Chip8() : 
-	stack{0}, 
-	display{0}, 
-	memory{0}, 
-	V{0}, 
-	keys{false},
-	pc(PC_START), 
-	I(0), 
-	sp(0),
-	st(0), 
-	dt(0),
-	drawFlag(false)
+Chip8::Chip8()
 {
 	memcpy(memory, FONT_SET, sizeof(FONT_SET));
 }
@@ -33,14 +22,14 @@ bool Chip8::loadGame(const char* path)
         return false;
     }
 
-	if (file.tellg() > PROGRAM_SIZE)
+	if (file.tellg() > C8InitValues::PROGRAM_SIZE)
 	{
 		file.close();
 		std::cerr << "ERROR: File Size Too Large" << std::endl;
 		return false;
 	}
 
-	uint8_t buffer[PROGRAM_SIZE];
+	uint8_t buffer[C8InitValues::PROGRAM_SIZE];
 
     file.seekg(0, std::ios::beg);
     file.read(reinterpret_cast<char*>(buffer), sizeof(buffer) / sizeof(uint8_t));
@@ -244,7 +233,7 @@ void Chip8::executeInstruction()
 						// Bit mask one bit at a time from MSB to LSB
 						if ((spriteRow & (0x80 >> w)) != 0)
 						{
-							int index = (w + V[X]) + ((h + V[Y]) * DISPLAY_WIDTH);
+							int index = (w + V[X]) + ((h + V[Y]) * C8Resolution::DISPLAY_WIDTH);
 
 							// Collision detected
 							if (display[index] == 1)

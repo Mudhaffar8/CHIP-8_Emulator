@@ -2,9 +2,14 @@
 
 #include <cstdint>
 
+namespace C8Resolution
+{
 constexpr int DISPLAY_WIDTH = 64;
 constexpr int DISPLAY_HEIGHT = 32;
+}
 
+namespace C8InitValues
+{
 const uint16_t MEM_SIZE = 0x1000;
 const uint8_t NUM_REGISTERS = 0x10;
 const uint8_t STACK_SIZE = 0x10;
@@ -13,7 +18,7 @@ const uint8_t NUM_KEYS = 0x10;
 const uint16_t PC_START = 0x200;
 
 const uint16_t PROGRAM_SIZE = MEM_SIZE - PC_START;
-
+}
 
 const uint8_t FONT_SET[] = {
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -37,27 +42,40 @@ const uint8_t FONT_SET[] = {
 class Chip8 
 {
 public:
+    Chip8();
+
+    /**
+     * @brief Searches for ROM file and loads into main memory.
+     * @returns true if success, false if failure
+     */
+	bool loadGame(const char* name);
+
+    /**
+	 * @brief Fetches and executes instructions based on opcode. Emulates chip-8 cpu cycle.
+	 */
+	void executeInstruction();
+	
 	/**
 	 * @brief Stack. Used to store return addresses.
 	 */
-	uint16_t stack[STACK_SIZE];
+	uint16_t stack[C8InitValues::STACK_SIZE]{};
 
 	/**
 	 * @brief Pixels to be display on the screen
 	 */
-	uint8_t display[DISPLAY_WIDTH * DISPLAY_HEIGHT];
+	uint8_t display[C8Resolution::DISPLAY_WIDTH * C8Resolution::DISPLAY_WIDTH]{};
 
 	/**
 	 * @brief Main memory. First 512 bytes reserved for fonts. Programs begin at 0x200.
 	 */
-	uint8_t memory[MEM_SIZE];
+	uint8_t memory[C8InitValues::MEM_SIZE]{};
 
 	/**
 	 * @brief 8-bit registers.
 	 *
 	 * Last byte reserved as a flag for certain instructions.
 	 */
-	uint8_t V[NUM_REGISTERS];
+	uint8_t V[C8InitValues::NUM_REGISTERS]{};
 
 	/**
 	 * @brief Stores key inputs. Key Bindings:
@@ -72,48 +90,35 @@ public:
      * |Z|X|C|V|
      * +-+-+-+-+
 	 */
-	bool keys[NUM_KEYS];
+	bool keys[C8InitValues::NUM_KEYS];
 
 	/**
 	 * @brief Program Counter. Only uses 12 least significant bits.
 	 */
-	uint16_t pc;
+	uint16_t pc = C8InitValues::PC_START;
 
 	/**
 	 * @brief Address Register. Only uses 12 least significant bits.
 	 */
-	uint16_t I;
+	uint16_t I = 0;
 
 	/**
 	 * @brief Stack Pointer.
 	 */
-	uint16_t sp;
+	uint16_t sp = 0;
 
 	/**
 	 * @brief 8-bit register for sound timer. Automatically decrements if non-zero.
 	*/
-	uint8_t st;
+	uint8_t st = 0;
 
 	/**
 	 * @brief 8-bit register for delay timer. Automatically decrements if non-zero.
 	 */
-	uint8_t dt;
+	uint8_t dt = 0;
 
 	/**
 	 * @brief dictates whether to redraw or not
 	 */
-	bool drawFlag;
-
-    Chip8();
-
-    /**
-     * @brief Searches for ROM file and loads into main memory.
-     * @returns true if success, false if failure
-     */
-	bool loadGame(const char* name);
-
-    /**
-	 * @brief Fetches and executes instructions based on opcode. Emulates chip-8 cpu cycle.
-	 */
-	void executeInstruction();
+	bool drawFlag = false;
 };
