@@ -1,17 +1,29 @@
 #include <stdexcept>
 
-#include "display.hpp"
+#include <display.hpp>
 
 #include <SDL3/SDL_render.h>
 
-const static SDL_Scancode key_bindings[16] = {
+/** @example
+ * +-+-+-+-+
+ * |1|2|3|4|
+ * +-+-+-+-+
+ * |Q|W|E|R|
+ * +-+-+-+-+
+ * |A|S|D|F|
+ * +-+-+-+-+
+ * |Z|X|C|V|
+ * +-+-+-+-+
+ */
+const static SDL_Scancode KEY_BINDINGS[16] = {
     SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4,
     SDL_SCANCODE_Q, SDL_SCANCODE_W, SDL_SCANCODE_E, SDL_SCANCODE_R,
     SDL_SCANCODE_A, SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_F,
     SDL_SCANCODE_Z, SDL_SCANCODE_X, SDL_SCANCODE_C, SDL_SCANCODE_V
 };
 
-Display::Display()
+Display::Display(Chip8& _chip)
+ : chip(_chip)
 {
     if (!SDL_Init(SDL_INIT_VIDEO)) 
     {
@@ -20,8 +32,8 @@ Display::Display()
     }
 
     if (!SDL_CreateWindowAndRenderer("CHIP-8 Emulator", 
-        C8Resolution::DISPLAY_WIDTH, 
-        C8Resolution::DISPLAY_HEIGHT, 
+        C8Resolution::WIDTH * scale_factor, 
+        C8Resolution::HEIGHT * scale_factor, 
         SDL_WINDOW_RESIZABLE, 
         &window, &renderer
     )) 
@@ -34,8 +46,8 @@ Display::Display()
         renderer, 
         SDL_PIXELFORMAT_RGBA8888, 
         SDL_TEXTUREACCESS_STREAMING, 
-        C8Resolution::DISPLAY_WIDTH, 
-        C8Resolution::DISPLAY_HEIGHT
+        C8Resolution::WIDTH * scale_factor, 
+        C8Resolution::HEIGHT * scale_factor
     );
 
     if (!texture)
@@ -56,7 +68,7 @@ Display::~Display()
     SDL_Quit();
 }
 
-void Display::handle_input(bool* key_input)
+void Display::handle_input()
 {
     while (SDL_PollEvent(&event))
     {
@@ -69,16 +81,16 @@ void Display::handle_input(bool* key_input)
         case SDL_EVENT_KEY_DOWN:
             for (int i = 0; i < 16; ++i)
             {
-                if (event.key.scancode == key_bindings[i])
-                    key_input[i] = true;
+                if (event.key.scancode == KEY_BINDINGS[i])
+                    chip.set_key(i);
             }
             break;
         
         case SDL_EVENT_KEY_UP:
             for (int i = 0; i < 16; ++i)
             {
-                if (event.key.scancode == key_bindings[i])
-                    key_input[i] = false;
+                if (event.key.scancode == KEY_BINDINGS[i])
+                    chip.unset_key(i);
             }
             break;
         
@@ -88,20 +100,21 @@ void Display::handle_input(bool* key_input)
     }
 }
 
-void Display::update_screen(const uint8_t* buffer)
+void Display::update_screen()
 {
     int pitch = 0;
     uint32_t* pixels = nullptr;
 
     SDL_LockTexture(texture, NULL, (void**)(&pixels), &pitch);
 
-    for (int y = 0; y < C8Resolution::DISPLAY_HEIGHT; ++y) 
+    for (int y = 0; y < C8Resolution::HEIGHT; ++y) 
     {
-        for (int x = 0; x < C8Resolution::DISPLAY_WIDTH; ++x) 
+        for (int x = 0; x < C8Resolution::WIDTH; ++x) 
         {   
-            int index = y * C8Resolution::DISPLAY_WIDTH + x;
+            int index = y * C8Resolution::WIDTH + x;
+            int pitch_index = y * (pitch / sizeof(uint32_t)) + x;
 
-            pixels[y * (pitch / sizeof(uint32_t)) + x] = buffer[index] == 0 ? ColourSpecs::bg_colour : ColourSpecs::draw_colour; 
+            pixels[pitch_index] = chip.get_display_pixel(index) == 0 ? ColourSpecs::BG_COLOUR : ColourSpecs::DRAW_COLOUR; 
         }
     }
 

@@ -59,6 +59,8 @@
         "chrono": "cpp",
         "forward_list": "cpp",
         "optional": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "algorithm": "cpp",
+        "filesystem": "cpp"
     }
 }

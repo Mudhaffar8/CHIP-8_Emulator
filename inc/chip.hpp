@@ -4,20 +4,20 @@
 
 namespace C8Resolution
 {
-constexpr int DISPLAY_WIDTH = 64;
-constexpr int DISPLAY_HEIGHT = 32;
+	constexpr int WIDTH = 64;
+	constexpr int HEIGHT = 32;
 }
 
 namespace C8InitValues
 {
-const uint16_t MEM_SIZE = 0x1000;
-const uint8_t NUM_REGISTERS = 0x10;
-const uint8_t STACK_SIZE = 0x10;
-const uint8_t NUM_KEYS = 0x10;
+	constexpr uint16_t MEM_SIZE = 0x1000;
+	constexpr uint8_t NUM_REGISTERS = 0x10;
+	constexpr uint8_t STACK_SIZE = 0x10;
+	constexpr uint8_t NUM_KEYS = 0x10;
 
-const uint16_t PC_START = 0x200;
+	constexpr uint16_t PC_START = 0x200;
 
-const uint16_t PROGRAM_SIZE = MEM_SIZE - PC_START;
+	constexpr uint16_t PROGRAM_SIZE = MEM_SIZE - PC_START;
 }
 
 const uint8_t FONT_SET[] = {
@@ -48,13 +48,22 @@ public:
      * @brief Searches for ROM file and loads into main memory.
      * @returns true if success, false if failure
      */
-	bool loadGame(const char* name);
+	bool load_game(const char* name);
 
     /**
-	 * @brief Fetches and executes instructions based on opcode. Emulates chip-8 cpu cycle.
+	 * @brief Fetches and executes instructions based on opcode.
 	 */
-	void executeInstruction();
+	void execute_instruction();
+
+	// Getters and Setters
+	inline bool check_draw_flag() { return draw_flag; }
+	inline uint8_t get_display_pixel(int index) { return display[index]; }
 	
+	// Keyboard
+	inline void set_key(int index) { keys[index] = true; }
+	inline void unset_key(int index) { keys[index] = false; }
+
+private:
 	/**
 	 * @brief Stack. Used to store return addresses.
 	 */
@@ -63,7 +72,7 @@ public:
 	/**
 	 * @brief Pixels to be display on the screen
 	 */
-	uint8_t display[C8Resolution::DISPLAY_WIDTH * C8Resolution::DISPLAY_WIDTH]{};
+	uint8_t display[C8Resolution::WIDTH * C8Resolution::HEIGHT]{};
 
 	/**
 	 * @brief Main memory. First 512 bytes reserved for fonts. Programs begin at 0x200.
@@ -78,19 +87,9 @@ public:
 	uint8_t V[C8InitValues::NUM_REGISTERS]{};
 
 	/**
-	 * @brief Stores key inputs. Key Bindings:
-	 * @example
-     * +-+-+-+-+
-     * |1|2|3|4|
-     * +-+-+-+-+
-     * |Q|W|E|R|
-     * +-+-+-+-+
-     * |A|S|D|F|
-     * +-+-+-+-+
-     * |Z|X|C|V|
-     * +-+-+-+-+
+	 * @brief Stores key inputs.
 	 */
-	bool keys[C8InitValues::NUM_KEYS];
+	bool keys[C8InitValues::NUM_KEYS]{};
 
 	/**
 	 * @brief Program Counter. Only uses 12 least significant bits.
@@ -120,5 +119,5 @@ public:
 	/**
 	 * @brief dictates whether to redraw or not
 	 */
-	bool drawFlag = false;
+	bool draw_flag = false;
 };
